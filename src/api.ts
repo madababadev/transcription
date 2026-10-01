@@ -17,15 +17,17 @@ export class ApiResponseError extends Error {
 
 export async function readJsonResponse(response: Response): Promise<Record<string, unknown>> {
   if (response.status === 204) return {}
+  const path = new URL(response.url, window.location.href).pathname
+  const responseType = response.headers.get('content-type') || 'no content type'
   let body: unknown
   try {
     body = await response.json()
   } catch {
     if (response.ok) {
       if (response.headers.get('content-type')?.toLowerCase().includes('text/html')) {
-        throw new Error('The server returned a web page for an API request. Deploy the Node server as a Render Web Service so /api routes are available.')
+        throw new Error(`${path} returned a web page (HTTP ${response.status}). Run the Node server as a Render Web Service so /api routes are available.`)
       }
-      throw new Error('The API returned an unreadable response. Check the deployed backend route.')
+      throw new Error(`${path} returned HTTP ${response.status} (${responseType}) instead of JSON. Check that the deployed URL runs server.mjs.`)
     }
     return {}
   }

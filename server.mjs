@@ -113,6 +113,10 @@ async function apiRequest(path, { method = 'GET', authorization, body } = {}) {
       signal: AbortSignal.timeout(15000),
     })
     const responseText = await upstream.text()
+    if (upstream.ok && upstream.status !== 204 && !responseText.trim()) {
+      console.error(`Account API returned an empty response for ${path} (HTTP ${upstream.status}).`)
+      return { status: 502, body: { error: 'The account service returned an empty response.' } }
+    }
     let responseBody = {}
     try {
       responseBody = responseText ? JSON.parse(responseText) : {}
@@ -463,6 +467,14 @@ const server = createServer(async (request, response) => {
   }
   if (pathname === '/api/app-date' && request.method === 'GET') {
     await getAppDate(response)
+    return
+  }
+  if (pathname === '/api/health' && request.method === 'GET') {
+    sendJson(response, 200, { status: 'ok', service: 'mabab-transcription' })
+    return
+  }
+  if (pathname.startsWith('/api/')) {
+    sendJson(response, 404, { error: 'Unknown API endpoint.' })
     return
   }
   if (vite) vite.middlewares(request, response, () => {})
