@@ -16,14 +16,24 @@ export class ApiResponseError extends Error {
 }
 
 export async function readJsonResponse(response: Response): Promise<Record<string, unknown>> {
+  if (response.status === 204) return {}
+  let body: unknown
   try {
-    const body: unknown = await response.json()
-    return body !== null && typeof body === 'object' && !Array.isArray(body)
-      ? body as Record<string, unknown>
-      : {}
+    body = await response.json()
   } catch {
+    if (response.ok) {
+      if (response.headers.get('content-type')?.toLowerCase().includes('text/html')) {
+        throw new Error('The server returned a web page for an API request. Deploy the Node server as a Render Web Service so /api routes are available.')
+      }
+      throw new Error('The API returned an unreadable response. Check the deployed backend route.')
+    }
     return {}
   }
+  if (body !== null && typeof body === 'object' && !Array.isArray(body)) {
+    return body as Record<string, unknown>
+  }
+  if (response.ok) throw new Error('The API returned JSON in an unexpected format.')
+  return {}
 }
 
 export function apiErrorMessage(body: Record<string, unknown>, fallback: string): string {
