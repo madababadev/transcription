@@ -1,0 +1,3 @@
+onnxruntime==1.29.0
+huggingface-hub==0.35.3
+onnx-asr @ git+https://github.com/TigreGotico/onnx-asr.git@bf523532068fc20fa5098e311e739886fa8a08df
